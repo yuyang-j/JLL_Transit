@@ -1,0 +1,63 @@
+* ── Policy trends by industry (364 vs 361) ───────────────────────────────────
+* Plots national policy counts and city coverage over time for EV vs gas vehicles.
+
+* ── Step 1: Subset to the two industries of interest ─────────────────────────
+preserve
+keep if inlist(industry, 364, 361)
+
+* ── Step 2: Collapse to industry-year level ──────────────────────────────────
+* For n_policy_nation_support: sum within industry-year
+* For city count: count distinct cities targeted (where n_policy_nation_support > 0)
+
+* -- Panel A: total national policy count by industry-year
+tempfile panel_a panel_b
+
+collapse (sum) n_policy_nation_support, by(industry year)
+save `panel_a'
+
+restore
+preserve
+keep if inlist(industry, 364, 361)
+
+* -- Panel B: number of distinct cities with at least one national policy
+keep if n_policy_nation_support > 0
+collapse (count) n_cities = city, by(industry year)   // counts obs (cities) per industry-year
+save `panel_b'
+
+restore
+
+* ── Step 3: Plot Panel A — total national policy count ───────────────────────
+use `panel_a', clear
+
+twoway ///
+    (line n_policy_nation_support year if industry == 361, ///
+        lcolor(navy) lwidth(medthick) lpattern(solid)) ///
+    (line n_policy_nation_support year if industry == 364, ///
+        lcolor(cranberry) lwidth(medthick) lpattern(dash)) , ///
+    legend(order(1 "361 Gas Vehicle" 2 "364 EV Manufacture") ///
+        position(6) rows(1)) ///
+    xtitle("Year") ///
+    ytitle("Number of National Policies") ///
+    title("National Industrial Policies by Industry") ///
+    xlabel(, angle(0)) ///
+    graphregion(color(white)) bgcolor(white)
+
+graph export "fig_national_policy_count.png", replace width(1200)
+
+* ── Step 4: Plot Panel B — number of cities targeted ─────────────────────────
+use `panel_b', clear
+
+twoway ///
+    (line n_cities year if industry == 361, ///
+        lcolor(navy) lwidth(medthick) lpattern(solid)) ///
+    (line n_cities year if industry == 364, ///
+        lcolor(cranberry) lwidth(medthick) lpattern(dash)) , ///
+    legend(order(1 "361 Gas Vehicle" 2 "364 EV Manufacture") ///
+        position(6) rows(1)) ///
+    xtitle("Year") ///
+    ytitle("Number of Cities Targeted") ///
+    title("Cities Targeted by National Policies") ///
+    xlabel(, angle(0)) ///
+    graphregion(color(white)) bgcolor(white)
+
+graph export "fig_national_policy_cities.png", replace width(1200)
